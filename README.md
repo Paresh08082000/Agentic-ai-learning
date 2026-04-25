@@ -106,3 +106,7 @@ The following are excluded from version control:
 | Web search | DuckDuckGo |
 | Frontend | Streamlit |
 | Conversation memory | LangGraph SQLite checkpointer |
+
+## Deployed app link
+
+https://pnb-chatbot.streamlit.app/
