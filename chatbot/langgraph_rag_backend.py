@@ -206,7 +206,14 @@ def chat_node(state: ChatState, config=None):
     )
 
     messages = [system_message, *state["messages"]]
-    response = llm_with_tools.invoke(messages, config=config)
+    try:
+        response = llm_with_tools.invoke(messages, config=config)
+    except Exception as e:
+        # Groq sometimes rejects malformed tool calls — retry without tools
+        if "Failed to call a function" in str(e) or "tool_use_failed" in str(e):
+            response = llm.invoke(messages, config=config)
+        else:
+            raise
     return {"messages": [response]}
 
 
