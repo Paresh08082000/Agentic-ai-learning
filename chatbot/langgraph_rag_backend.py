@@ -13,6 +13,7 @@ from youtube_transcript_api import (
     NoTranscriptFound,
     VideoUnavailable,
 )
+from youtube_transcript_api._errors import IpBlocked, RequestBlocked
 
 _yt_api = YouTubeTranscriptApi()
 from dotenv import load_dotenv
@@ -169,6 +170,8 @@ def get_youtube_transcript(url: str) -> dict:
         return {"error": "No transcript was found for this video (it may not have captions)."}
     except VideoUnavailable:
         return {"error": "This video is unavailable (it may be private, deleted, or region-locked)."}
+    except (IpBlocked, RequestBlocked):
+        return {"error": "YouTube is blocking transcript requests from this server's IP address. This is a known limitation of cloud-hosted deployments. The feature works when running the app locally."}
     except Exception as e:
         return {"error": f"Could not fetch transcript: {e}"}
 
