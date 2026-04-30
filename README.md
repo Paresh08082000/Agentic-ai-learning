@@ -1,7 +1,7 @@
 # Agentic AI Learning — LangGraph Chatbot
 
 A multi-utility chatbot built with **LangGraph**, **Groq LLM**, and **Streamlit**.  
-Features: web search, RAG over uploaded PDFs, stock price lookup, and calculator — all with persistent conversation history.
+Features: web search, RAG over uploaded PDFs, stock price lookup, weather lookup, and YouTube transcript analysis — all with persistent conversation history.
 
 ---
 
@@ -19,6 +19,20 @@ Agentic-ai-learning/
 ├── .gitignore
 └── README.md
 ```
+
+---
+
+## Tools
+
+| Tool | Description | Example prompt |
+|---|---|---|
+| **Web Search** | Real-time web search via DuckDuckGo | `"What happened in tech news today?"` |
+| **Stock Price** | Live stock quote by ticker symbol | `"What is the current price of AAPL?"` |
+| **Weather** | Current weather for any city (no API key needed) | `"What's the weather in Tokyo?"` |
+| **YouTube Transcript** | Fetch and analyse the transcript of any YouTube video | `"Summarize this video: https://www.youtube.com/watch?v=B0p5SdkBydU"` |
+| **PDF RAG** | Ask questions about an uploaded PDF document | Upload a PDF, then ask questions |
+
+> **Note:** YouTube transcript requires the video to have captions enabled. To check, open the video on YouTube, click `...` → **Open transcript**. If the option appears, the tool will work.
 
 ---
 
@@ -104,6 +118,8 @@ The following are excluded from version control:
 | Embeddings | HuggingFace `all-MiniLM-L6-v2` |
 | Vector store | FAISS (in-memory, per thread) |
 | Web search | DuckDuckGo |
+| Weather | wttr.in (no API key required) |
+| YouTube transcripts | youtube-transcript-api |
 | Frontend | Streamlit |
 | Conversation memory | LangGraph SQLite checkpointer |
 

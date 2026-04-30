@@ -1,11 +1,20 @@
 from __future__ import annotations
 
 import os
+import re
 import sqlite3
 import tempfile
 from typing import Annotated, Any, Dict, Optional, TypedDict
 
 import requests
+from youtube_transcript_api import (
+    YouTubeTranscriptApi,
+    TranscriptsDisabled,
+    NoTranscriptFound,
+    VideoUnavailable,
+)
+
+_yt_api = YouTubeTranscriptApi()
 from dotenv import load_dotenv
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_community.tools import DuckDuckGoSearchRun
@@ -108,33 +117,60 @@ def web_search(query: str) -> str:
 
 
 @tool
-def calculator(first_num: float, second_num: float, operation: str) -> dict:
-    """
-    Perform a basic arithmetic operation on two numbers.
-    Supported operations: add, sub, mul, div
-    """
+def get_weather(city: str) -> dict:
+    """Get current weather conditions for any city."""
     try:
-        if operation == "add":
-            result = first_num + second_num
-        elif operation == "sub":
-            result = first_num - second_num
-        elif operation == "mul":
-            result = first_num * second_num
-        elif operation == "div":
-            if second_num == 0:
-                return {"error": "Division by zero is not allowed"}
-            result = first_num / second_num
-        else:
-            return {"error": f"Unsupported operation '{operation}'"}
-
+        r = requests.get(f"https://wttr.in/{city}?format=j1", timeout=10)
+        r.raise_for_status()
+        data = r.json()
+        current = data["current_condition"][0]
+        area = data["nearest_area"][0]
         return {
-            "first_num": first_num,
-            "second_num": second_num,
-            "operation": operation,
-            "result": result,
+            "city": city,
+            "area": area["areaName"][0]["value"],
+            "country": area["country"][0]["value"],
+            "temp_c": current["temp_C"],
+            "temp_f": current["temp_F"],
+            "feels_like_c": current["FeelsLikeC"],
+            "humidity": current["humidity"],
+            "description": current["weatherDesc"][0]["value"],
+            "wind_kmph": current["windspeedKmph"],
+            "visibility_km": current["visibility"],
         }
     except Exception as e:
         return {"error": str(e)}
+
+
+@tool
+def get_youtube_transcript(url: str) -> dict:
+    """
+    Fetch the transcript of a YouTube video from its URL.
+    Use this to summarize, answer questions about, or analyse YouTube videos.
+    """
+    try:
+        match = re.search(
+            r"(?:v=|youtu\.be/|/embed/|/shorts/)([A-Za-z0-9_-]{11})", url
+        )
+        if not match:
+            return {"error": "Could not extract a valid YouTube video ID from the URL."}
+
+        video_id = match.group(1)
+        transcript_list = _yt_api.fetch(video_id)
+        full_text = " ".join(entry.text for entry in transcript_list)
+
+        # Cap at ~8 000 chars to stay within context limits
+        if len(full_text) > 8000:
+            full_text = full_text[:8000] + "… [transcript truncated]"
+
+        return {"video_id": video_id, "transcript": full_text}
+    except TranscriptsDisabled:
+        return {"error": "This video has captions/transcripts disabled by the uploader."}
+    except NoTranscriptFound:
+        return {"error": "No transcript was found for this video (it may not have captions)."}
+    except VideoUnavailable:
+        return {"error": "This video is unavailable (it may be private, deleted, or region-locked)."}
+    except Exception as e:
+        return {"error": f"Could not fetch transcript: {e}"}
 
 
 @tool
@@ -176,7 +212,7 @@ def rag_tool(query: str, thread_id: Optional[str] = None) -> dict:
     }
 
 
-tools = [web_search, get_stock_price, calculator, rag_tool]
+tools = [web_search, get_stock_price, get_weather, get_youtube_transcript, rag_tool]
 llm_with_tools = llm.bind_tools(tools)
 
 # -------------------
@@ -199,8 +235,8 @@ def chat_node(state: ChatState, config=None):
         content=(
             "You are a helpful assistant. For questions about the uploaded PDF, call "
             "the `rag_tool` and include the thread_id "
-            f"`{thread_id}`. You can also use the web search, stock price, and "
-            "calculator tools when helpful. If no document is available, ask the user "
+            f"`{thread_id}`. You can also use the web search, stock price, weather, "
+            "and YouTube transcript tools when helpful. If no document is available, ask the user "
             "to upload a PDF."
         )
     )
@@ -210,7 +246,7 @@ def chat_node(state: ChatState, config=None):
         response = llm_with_tools.invoke(messages, config=config)
     except Exception as e:
         # Groq sometimes rejects malformed tool calls — retry without tools
-        if "Failed to call a function" in str(e) or "tool_use_failed" in str(e):
+        if any(s in str(e) for s in ("Failed to call a function", "tool_use_failed", "tool call validation failed")):
             response = llm.invoke(messages, config=config)
         else:
             raise

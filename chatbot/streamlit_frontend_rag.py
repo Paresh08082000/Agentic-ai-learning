@@ -234,17 +234,17 @@ if not st.session_state["message_history"]:
             <div style='font-weight:600; margin: 0.3rem 0;'>Web Search</div>
             <div style='font-size:0.8rem; color:#6b7280;'>Get real-time info from the internet</div>
         </div>
-        <div style='flex:1; min-width:180px; background: linear-gradient(135deg,#fffbf0,#fef9e8);
-                    border-radius:14px; padding:1.2rem; border-left: 4px solid #f59e0b;'>
-            <div style='font-size:1.5rem;'>📈</div>
-            <div style='font-weight:600; margin: 0.3rem 0;'>Stock Prices</div>
-            <div style='font-size:0.8rem; color:#6b7280;'>Look up live stock prices by symbol</div>
+        <div style='flex:1; min-width:180px; background: linear-gradient(135deg,#f0f9ff,#e0f2fe);
+                    border-radius:14px; padding:1.2rem; border-left: 4px solid #0ea5e9;'>
+            <div style='font-size:1.5rem;'>🌤️</div>
+            <div style='font-weight:600; margin: 0.3rem 0;'>Weather</div>
+            <div style='font-size:0.8rem; color:#6b7280;'>Get current weather for any city worldwide</div>
         </div>
         <div style='flex:1; min-width:180px; background: linear-gradient(135deg,#fff0f0,#fee8e8);
                     border-radius:14px; padding:1.2rem; border-left: 4px solid #ef4444;'>
-            <div style='font-size:1.5rem;'>🧮</div>
-            <div style='font-weight:600; margin: 0.3rem 0;'>Calculator</div>
-            <div style='font-size:0.8rem; color:#6b7280;'>Perform arithmetic operations instantly</div>
+            <div style='font-size:1.5rem;'>▶️</div>
+            <div style='font-weight:600; margin: 0.3rem 0;'>YouTube</div>
+            <div style='font-size:0.8rem; color:#6b7280;'>Summarize or ask questions about any YouTube video</div>
         </div>
     </div>
     """, unsafe_allow_html=True)
@@ -254,7 +254,7 @@ for message in st.session_state["message_history"]:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-user_input = st.chat_input("Ask about your document, search the web, check stocks…")
+user_input = st.chat_input("Ask about your document, search the web, check stocks, weather, YouTube…")
 
 if user_input:
     st.session_state["message_history"].append({"role": "user", "content": user_input})
