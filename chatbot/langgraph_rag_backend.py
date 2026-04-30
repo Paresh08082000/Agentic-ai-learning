@@ -1,21 +1,11 @@
 from __future__ import annotations
 
 import os
-import re
 import sqlite3
 import tempfile
 from typing import Annotated, Any, Dict, Optional, TypedDict
 
 import requests
-from youtube_transcript_api import (
-    YouTubeTranscriptApi,
-    TranscriptsDisabled,
-    NoTranscriptFound,
-    VideoUnavailable,
-)
-from youtube_transcript_api._errors import IpBlocked, RequestBlocked
-
-_yt_api = YouTubeTranscriptApi()
 from dotenv import load_dotenv
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_community.tools import DuckDuckGoSearchRun
@@ -148,30 +138,34 @@ def get_youtube_transcript(url: str) -> dict:
     Fetch the transcript of a YouTube video from its URL.
     Use this to summarize, answer questions about, or analyse YouTube videos.
     """
+    api_key = os.environ.get("SUPADATA_API_KEY")
+    if not api_key:
+        return {"error": "SUPADATA_API_KEY is not set. Add it to your .env file or Streamlit secrets."}
+
     try:
-        match = re.search(
-            r"(?:v=|youtu\.be/|/embed/|/shorts/)([A-Za-z0-9_-]{11})", url
+        r = requests.get(
+            "https://api.supadata.ai/v1/transcript",
+            params={"url": url},
+            headers={"x-api-key": api_key},
+            timeout=15,
         )
-        if not match:
-            return {"error": "Could not extract a valid YouTube video ID from the URL."}
+        if r.status_code == 401:
+            return {"error": "Invalid Supadata API key. Check your SUPADATA_API_KEY."}
+        if r.status_code == 404:
+            return {"error": "No transcript found for this video (it may have captions disabled or be unavailable)."}
+        if not r.ok:
+            return {"error": f"Supadata API error {r.status_code}: {r.text}"}
 
-        video_id = match.group(1)
-        transcript_list = _yt_api.fetch(video_id)
-        full_text = " ".join(entry.text for entry in transcript_list)
+        data = r.json()
+        segments = data.get("content", [])
+        if not segments:
+            return {"error": "Transcript came back empty."}
 
-        # Cap at ~8 000 chars to stay within context limits
+        full_text = " ".join(seg["text"] for seg in segments)
         if len(full_text) > 8000:
             full_text = full_text[:8000] + "… [transcript truncated]"
 
-        return {"video_id": video_id, "transcript": full_text}
-    except TranscriptsDisabled:
-        return {"error": "This video has captions/transcripts disabled by the uploader."}
-    except NoTranscriptFound:
-        return {"error": "No transcript was found for this video (it may not have captions)."}
-    except VideoUnavailable:
-        return {"error": "This video is unavailable (it may be private, deleted, or region-locked)."}
-    except (IpBlocked, RequestBlocked):
-        return {"error": "YouTube is blocking transcript requests from this server's IP address. This is a known limitation of cloud-hosted deployments. The feature works when running the app locally."}
+        return {"url": url, "lang": data.get("lang"), "transcript": full_text}
     except Exception as e:
         return {"error": f"Could not fetch transcript: {e}"}
 

@@ -60,8 +60,10 @@ pip install -r chatbot/requirements.txt
 Create a `.env` file inside the `chatbot/` folder:
 ```
 GROQ_API_KEY=your_groq_api_key_here
+SUPADATA_API_KEY=your_supadata_api_key_here
 ```
-> Get a free API key at https://console.groq.com
+> Get a free Groq API key at https://console.groq.com  
+> Get a free Supadata API key (100 transcripts/month) at https://supadata.ai
 
 ### 5. Run the app
 ```bash
@@ -88,6 +90,7 @@ Sign in with your GitHub account.
 Click **Advanced settings → Secrets** and paste:
 ```toml
 GROQ_API_KEY = "your_actual_groq_api_key_here"
+SUPADATA_API_KEY = "your_actual_supadata_api_key_here"
 ```
 
 ### 5. Click Deploy
@@ -119,7 +122,7 @@ The following are excluded from version control:
 | Vector store | FAISS (in-memory, per thread) |
 | Web search | DuckDuckGo |
 | Weather | wttr.in (no API key required) |
-| YouTube transcripts | youtube-transcript-api |
+| YouTube transcripts | Supadata.ai API (works on cloud, 100 free/month) |
 | Frontend | Streamlit |
 | Conversation memory | LangGraph SQLite checkpointer |
 
