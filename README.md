@@ -116,7 +116,7 @@ The following are excluded from version control:
 
 | Layer | Technology |
 |---|---|
-| LLM | Groq (`llama-3.3-70b-versatile`) |
+| LLM | Groq (`llama-3.3-70b-versatile`) A cloud API service that runs open-source LLMs (by Meta, Mistral, Google) on their custom LPU hardware at very high speed, with a free tier. |
 | Agent framework | LangGraph |
 | Embeddings | HuggingFace `all-MiniLM-L6-v2` |
 | Vector store | FAISS (in-memory, per thread) |
